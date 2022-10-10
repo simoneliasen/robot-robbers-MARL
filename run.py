@@ -15,44 +15,8 @@ from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor
 import wandb
 from wandb.integration.sb3 import WandbCallback
 
-# Settings argparse
-##################################################################################################
-
-parser = argparse.ArgumentParser(description='RoboCopper ArgParse')
-parser.add_argument('--mode', type=str,
-                    help="enter the model you want to train, either 'PPO', 'A2C' or 'SAC'", default="tune")
-parser.add_argument('--load', type=bool,
-                    help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=False)
-parser.add_argument('--multi', type=bool,
-                    help="MultiCPU usage or not'", default=False)
-parser.add_argument('--cpu', type=int,
-                    help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=4)
-parser.add_argument('--maxticktotal', type=int,
-                    help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=100000)
-parser.add_argument('--maxtickepisode', type=int,
-                    help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=200)
-parser.add_argument('--agentcount', type=int,
-                    help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=1)
-parser.add_argument('--rewardshaping', type=int,
-                    help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=True)
-parser.add_argument('--hyperparametertuning', type=int,
-                    help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=False)
-
-args = parser.parse_args()
-
-ticks_total = args.maxticktotal
-ticks_episode = args.maxtickepisode
-load_model = args.load
-count_cpu = args.cpu
-mode = args.mode
-multi = args.multi
-agentcount = args.agentcount
-reward_shaping = args.rewardshaping
-hyperparameter_tuning = args.hyperparametertuning
-
 # Save best performing model
 ##################################################################################################
-
 
 class SaveOnBestTrainingRewardCallback(BaseCallback):
     def __init__(self, check_freq: int, log_dir: str, verbose=1):
@@ -86,15 +50,14 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
                 # New best model, you could save the agent here
                 if mean_reward > self.best_mean_reward:
                     self.best_mean_reward = mean_reward
-                    # Example for saving best model
-                    # if self.verbose > 0:
-                    # print("Saving new best model to {}".format(self.save_path))
-                    # self.model.save(self.save_path)
+                     #Example for saving best model
+                    if self.verbose > 0:
+                        print("Saving new best model to {}".format(self.save_path))
+                        self.model.save(self.save_path)
         return True
 
 # Resets Environments after ticks_episode
 ##################################################################################################
-
 
 class TimeLimitWrapper(gym.Wrapper):
     """
@@ -136,7 +99,6 @@ class TimeLimitWrapper(gym.Wrapper):
 # Discretize actions. i.e [0.6212321, -0.2333, -0,5232] to [1,0,-1]
 ##################################################################################################
 
-
 class ActionWrapper(gym.ActionWrapper):
     def __init__(self, env):
         super().__init__(env)
@@ -150,7 +112,6 @@ class ActionWrapper(gym.ActionWrapper):
 
 # Reward = inverse distance to nearest cashbag + reaching it bonus
 ###################################################################################################
-
 
 class RewardWrapper(gym.RewardWrapper):
     def __init__(self, env, envregulator, diviser, reachreward):
@@ -168,13 +129,13 @@ class RewardWrapper(gym.RewardWrapper):
                   for (x, y, w, h) in state[0] if x >= 0 and y >= 0]
         indexed_robot_gold_carry = state[5]
 
-        def theSum(aList):
-            s = 0
-            for x in aList:
-                if x > 0:
-                    s = s + x
-            return s
-        indexed_robot_gold_carry = theSum(state[5])
+        #def theSum(aList):
+        #    s = 0
+        #    for x in aList:
+        #        if x > 0:
+        #            s = s + x
+        #    return s
+        #indexed_robot_gold_carry = theSum(state[5])
        # print(indexed_robot_gold_carry)
 
         distances = []
@@ -302,7 +263,6 @@ def train(ppo_parameters, reward_parameters):
 # Tune model
 ##################################################################################################
 
-
 def tune(ppo_parameters, reward_parameters, reward_config, hyper_config):
 
     learning_rate, batch_size, n_epochs, gamma, gae_lambda, clip, entropy_coefficient, value_coefficient = ppo_parameters
@@ -336,7 +296,6 @@ def tune(ppo_parameters, reward_parameters, reward_config, hyper_config):
 
 # Test model
 ##################################################################################################
-
 
 def test():
     print("-------- Inference on model ------------------")
@@ -372,11 +331,43 @@ def test():
 
     print("-------- Inference Done ------------------")
 
-# Initialize file and parameters
+# Initialize testing, values, default or sweep
 ##################################################################################################
 
-
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='RoboCopper ArgParse')
+
+    parser.add_argument('--mode', type=str,
+                        help="enter the model you want to train, either 'PPO', 'A2C' or 'SAC'", default="train")
+    parser.add_argument('--load', type=bool,
+                        help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=False)
+    parser.add_argument('--multi', type=bool,
+                        help="MultiCPU usage or not'", default=False)
+    parser.add_argument('--cpu', type=int,
+                        help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=4)
+    parser.add_argument('--maxticktotal', type=int,
+                        help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=100000)
+    parser.add_argument('--maxtickepisode', type=int,
+                        help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=200)
+    parser.add_argument('--agentcount', type=int,
+                        help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=1)
+    parser.add_argument('--rewardshaping', type=int,
+                        help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=False)
+    parser.add_argument('--hyperparametertuning', type=int,
+                        help="do you want to load a previous model? 'TRUE' or 'FALSE'", default=True)
+
+    args = parser.parse_args()
+
+    ticks_total = args.maxticktotal
+    ticks_episode = args.maxtickepisode
+    load_model = args.load
+    count_cpu = args.cpu
+    mode = args.mode
+    multi = args.multi
+    agentcount = args.agentcount
+    reward_shaping = args.rewardshaping
+    hyperparameter_tuning = args.hyperparametertuning
 
     log_dir = "tmp/"
     os.makedirs(log_dir, exist_ok=True)
@@ -440,7 +431,6 @@ if __name__ == '__main__':
                 'values': [3, 6, 9, 15, 25, 40, 50, 70, 100, 200, 500, 600, 900, 1000, 5000]
             }
         }
-
     }
 
     # Default PPO parameters
